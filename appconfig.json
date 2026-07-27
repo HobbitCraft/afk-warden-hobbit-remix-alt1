@@ -1,0 +1,18 @@
+{
+  "appName": "AFK Hobbit",
+  "description": "AFK Warden fork with selectable chat alerts and mining stamina detection.",
+  "appUrl": "./index.html",
+  "configUrl": "./appconfig.json",
+  "iconUrl": "./assets/icon.svg",
+  "defaultWidth": 220,
+  "defaultHeight": 138,
+  "minWidth": 150,
+  "minHeight": 50,
+  "maxWidth": 300,
+  "maxHeight": 500,
+  "requestHandlers": [],
+  "activators": [
+    "Rest"
+  ],
+  "permissions": "pixel,gamestate,overlay"
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+	<link rel="stylesheet" type="text/css" href="https://runeapps.org/apps/alt1/afkscape/style.css" />
+	<link rel="stylesheet" type="text/css" href="https://runeapps.org/nis/nis.css" />
+	<link rel="stylesheet" type="text/css" href="https://runeapps.org/nis/alt1-currentskin/skinstyle.css" />
+	<link rel="stylesheet" type="text/css" href="https://runeapps.org/runeappslib.css" />
+	<script src="https://www.unpkg.com/alt1@0.1.3/dist/base/index.js"></script>
+	<script src="https://www.unpkg.com/alt1@0.1.3/dist/ocr/index.js"></script>
+	<script src="https://www.unpkg.com/alt1@0.1.3/dist/chatbox/index.js"></script>
+	<script src="./scripts.bundle.js"></script>
+	<script src="./afk-hobbit-chat-select.js"></script>
+	<style type="text/css">
+		#toiletmode {
+			display: none;
+		}
+	</style>
+</head>
+	<body class="nis" onload="AfkScripts.start();">
+		<div id="settingsbar">
+			<div style="display:flex; flex-direction:row; align-items:center;">
+				<div id="presetbutton" onclick="AfkScripts.presetMenu();" title="Load premade preset" class="nissmallimagebutton menubutton"></div>
+				<div id="addalertbutton" onclick="AfkScripts.addAlerterMenu();" title="Add alert" class="nissmallimagebutton menubutton"></div>
+				<div id="settingsbutton" onclick="AfkScripts.settingsMenu();" title="Settings" class="nissmallimagebutton menubutton"></div>
+				<div id="savebutton" onclick="AfkScripts.saveMenu();" title="Save, load, export or import presets" class="nissmallimagebutton menubutton"></div>
+				<div id="feedbackbutton" onclick="AfkScripts.clickFeedback();" title="Feedback and requests" class="nissmallimagebutton menubutton"></div>
+				<div id="toiletmode" onclick="AfkScripts.toggleRemoteSocket();" title="Toggle toilet mode to monitor rs from your phone!" class="nissmallimagebutton menubutton"></div>
+				<div id="alarmmute" title="Mute"></div>
+				<div id="alarmvolume" title="Alarm volume"><div id="alarmvolumeinner"></div></div>
+				<div id="presetname"></div>
+			</div>
+			<div class="nisseperator"></div>
+		</div>
+		<div id="alertwrapper">
+			<div id="alertroot"></div>
+			<div id="intro" style="display:none;">
+				<div class="introsection">
+					<div id="intropreset" class="introbutton"></div>
+					Load a premade preset, with multiple alerts
+				</div>
+				<div class="introsection">
+					<div id="introaddalert" class="introbutton"></div>
+					Add a single interface alert
+				</div>
+				<div class="introsection">
+					<div id="introfeedback" class="introbutton"></div>
+					Still in beta, you can leave feedback here
+				</div>
+			</div>
+		</div>
+	</body>
+	</html>
