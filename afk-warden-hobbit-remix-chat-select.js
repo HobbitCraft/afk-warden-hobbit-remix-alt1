@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "afkHobbit.chatIndex";
+  const STORAGE_KEY = "afkWardenHobbitRemix.chatIndex";
+  const LEGACY_STORAGE_KEY = "afkHobbit.chatIndex";
   const selectorSet = new Set();
   let appliedIndex = null;
 
@@ -18,7 +19,12 @@
   };
 
   function selectedIndex() {
-    const value = Number.parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+    let stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === null) {
+      stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (stored !== null) localStorage.setItem(STORAGE_KEY, stored);
+    }
+    const value = Number.parseInt(stored || "0", 10);
     return Number.isFinite(value) && value >= 0 ? value : 0;
   }
 
@@ -160,22 +166,22 @@
   }
 
   function installToolbarSelector() {
-    if (document.getElementById("afk-hobbit-chat-select")) return;
+    if (document.getElementById("afk-warden-hobbit-remix-chat-select")) return;
 
     const settingsButton = document.getElementById("settingsbutton");
     const row = settingsButton && settingsButton.parentElement;
     if (!row) return;
 
-    const selector = makeSelector("afk-hobbit-chat-select");
-    selector.id = "afk-hobbit-chat-select";
+    const selector = makeSelector("afk-warden-hobbit-remix-chat-select");
+    selector.id = "afk-warden-hobbit-remix-chat-select";
     row.insertBefore(selector, settingsButton.nextSibling);
   }
 
   function settingsDom() {
     const wrap = document.createElement("div");
-    wrap.className = "afk-hobbit-chat-setting";
+    wrap.className = "afk-warden-hobbit-remix-chat-setting";
 
-    const selector = makeSelector("afk-hobbit-chat-select afk-hobbit-chat-select-settings");
+    const selector = makeSelector("afk-warden-hobbit-remix-chat-select afk-warden-hobbit-remix-chat-select-settings");
     const scan = document.createElement("input");
     scan.type = "button";
     scan.value = "Scan";
@@ -190,13 +196,13 @@
   }
 
   function installStyles() {
-    if (document.getElementById("afk-hobbit-chat-select-style")) return;
+    if (document.getElementById("afk-warden-hobbit-remix-chat-select-style")) return;
     const style = document.createElement("style");
-    style.id = "afk-hobbit-chat-select-style";
+    style.id = "afk-warden-hobbit-remix-chat-select-style";
     style.textContent = [
-      ".afk-hobbit-chat-select{height:20px;max-width:92px;margin:1px 3px;background:#10202a;color:#d9f0ff;border:1px solid rgba(255,255,255,.35);font-size:11px;}",
-      ".afk-hobbit-chat-setting{display:flex;gap:4px;align-items:center;margin:2px 5px 6px;}",
-      ".afk-hobbit-chat-select-settings{max-width:160px;flex:1;margin:0;}",
+      ".afk-warden-hobbit-remix-chat-select{height:20px;max-width:92px;margin:1px 3px;background:#10202a;color:#d9f0ff;border:1px solid rgba(255,255,255,.35);font-size:11px;}",
+      ".afk-warden-hobbit-remix-chat-setting{display:flex;gap:4px;align-items:center;margin:2px 5px 6px;}",
+      ".afk-warden-hobbit-remix-chat-select-settings{max-width:160px;flex:1;margin:0;}",
     ].join("");
     document.head.appendChild(style);
   }
@@ -233,12 +239,14 @@
     return true;
   }
 
-  window.AfkHobbitChatSelect = {
+  const chatSelectApi = {
     applySelection,
     refresh,
     settingsDom,
     setSelectedIndex,
   };
+  window.AfkWardenHobbitRemixChatSelect = chatSelectApi;
+  window.AfkHobbitChatSelect = chatSelectApi;
 
   if (!install()) {
     const timer = setInterval(() => {

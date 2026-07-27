@@ -56,9 +56,9 @@ It is used here for interoperability with Alt1 Toolkit.
 
 ## RuneApps hosted resources
 
-AFK Hobbit loads AFK Warden stylesheets, alarm sounds, popup styles, and the
-optional speech endpoint from `runeapps.org` at runtime. Those files are not
-redistributed in this repository.
+AFK Warden Hobbit Remix loads AFK Warden stylesheets, alarm sounds, popup
+styles, and the optional speech endpoint from `runeapps.org` at runtime. Those
+files are not redistributed in this repository.
 
 RuneScape and its visual assets are trademarks or copyrighted works of Jagex
 Ltd. This project is an unofficial fan utility and is not endorsed by Jagex,

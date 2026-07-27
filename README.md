@@ -1,10 +1,10 @@
-# AFK Hobbit for Alt1
+# AFK Warden Hobbit Remix
 
 An Alt1 app based on RuneApps AFK Warden.
 
-AFK Hobbit keeps the AFK Warden alerts and presets, uses the current external
-Alt1 chatbox reader, lets you select which detected chat window supplies chat
-alerts, and adds a Mining Stamina alert.
+AFK Warden Hobbit Remix keeps the AFK Warden alerts and presets, uses the
+current external Alt1 chatbox reader, lets you select which detected chat
+window supplies chat alerts, and adds a Mining Stamina alert.
 
 See [README-COMPARISON.md](README-COMPARISON.md) for the differences from
 RuneApps AFK Warden.
@@ -19,13 +19,13 @@ RuneApps AFK Warden.
 
 Open this appconfig URL in Alt1:
 
-`alt1://addapp/https://hobbitcraft.github.io/afk-hobbit-alt1/appconfig.json`
+`alt1://addapp/https://hobbitcraft.github.io/afk-warden-hobbit-remix-alt1/appconfig.json`
 
 ## Chat Alerts
 
-Open Settings and choose the chat index used by chat alerts. AFK Hobbit draws a
-white border around the selected chat window when Settings opens or the
-selection changes.
+Open Settings and choose the chat index used by chat alerts. AFK Warden Hobbit
+Remix draws a white border around the selected chat window when Settings opens
+or the selection changes.
 
 ## Mining Stamina
 
@@ -39,7 +39,7 @@ are tolerated while the bar position is tracked.
 
 ## Notes
 
-AFK Hobbit does not click, type, or send input to RuneScape.
+AFK Warden Hobbit Remix does not click, type, or send input to RuneScape.
 
 The RuneApps phone-monitor backend is not included, so its toolbar button is
 hidden. The feedback button opens this repository's GitHub Issues page.
@@ -49,7 +49,7 @@ hidden. The feedback button opens this repository's GitHub Issues page.
 - `appconfig.json` - Alt1 manifest
 - `index.html` - app page
 - `scripts.bundle.js` - patched AFK Warden bundle
-- `afk-hobbit-chat-select.js` - chat selector patch
+- `afk-warden-hobbit-remix-chat-select.js` - chat selector patch
 - `assets/icon.svg` - app icon
 - `THIRD_PARTY_NOTICES.md` - attribution and dependency notices
 - `scripts.bundle.js.LICENSE.txt` - generated notices referenced by the bundle
