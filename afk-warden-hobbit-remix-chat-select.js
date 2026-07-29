@@ -123,6 +123,105 @@
     return applyReaderSelection(reader, showOverlay, false);
   }
 
+  function discoverEditorColors(reader, lines, extraColors) {
+    const box = reader && reader.pos && reader.pos.mainbox;
+    const buffer = reader && reader.lastReadBuffer;
+    const getFontColor = reader && reader.constructor && reader.constructor.getFontColor;
+    const lib = window.a1lib || window.A1lib;
+    if (!box || !buffer || !Array.isArray(lines) || !lib || extraColors.length >= 96) return false;
+
+    const existing = new Set(reader.readargs.colors);
+    const existingRgb = lib.unmixColor
+      ? Array.from(existing, (color) => lib.unmixColor(color))
+      : [];
+    let added = false;
+    for (const line of lines) {
+      if (extraColors.length >= 96) break;
+      const fragments = line.fragments || [];
+      const lastFragment = fragments[fragments.length - 1];
+      const startX = lastFragment ? lastFragment.xend : box.rect.x + box.line0x;
+      const availableWidth = box.rect.x + box.rect.width - startX;
+      if (availableWidth < 3) continue;
+
+      try {
+        const sample = buffer.toData(startX, line.basey - 8, Math.min(48, availableWidth), 10);
+        let color = null;
+        let bestScore = -Infinity;
+        if (sample.data) {
+          for (let x = 0; x < sample.width - 1; x++) {
+            for (let y = 0; y < sample.height - 1; y++) {
+              const offset = 4 * x + 4 * sample.width * y;
+              const diagonal = offset + 4 + 4 * sample.width;
+              const candidate = [
+                sample.data[offset],
+                sample.data[offset + 1],
+                sample.data[offset + 2],
+              ];
+              const mixed = lib.mixColor(candidate[0], candidate[1], candidate[2]);
+              if (existing.has(mixed) || Math.max(...candidate) < 64) continue;
+              if (
+                existingRgb.some(
+                  (known) =>
+                    (x < 4 &&
+                      Math.abs(candidate[0] - known[0]) <= 18 &&
+                      Math.abs(candidate[1] - known[1]) <= 18 &&
+                      Math.abs(candidate[2] - known[2]) <= 18) ||
+                    (Math.max(...candidate) - Math.min(...candidate) <= 6 &&
+                      Math.max(...known) - Math.min(...known) <= 6),
+                )
+              ) {
+                continue;
+              }
+
+              const brightness = candidate[0] + candidate[1] + candidate[2];
+              const diagonalBrightness =
+                sample.data[diagonal] + sample.data[diagonal + 1] + sample.data[diagonal + 2];
+              const score = Math.min(255, 275 - diagonalBrightness) * brightness;
+              if (score > bestScore) {
+                bestScore = score;
+                color = candidate;
+              }
+            }
+          }
+        } else if (getFontColor) {
+          color = getFontColor(sample, 0, 0, sample.width, sample.height);
+        }
+        if (!color) continue;
+        const mixed = lib.mixColor(color[0], color[1], color[2]);
+        extraColors.push([color[0], color[1], color[2]]);
+        existing.add(mixed);
+        existingRgb.push(color);
+        added = true;
+      } catch (_) {}
+    }
+    return added;
+  }
+
+  function editorShouldStickToBottom(container) {
+    if (!container.__hobbitChatRendered) return true;
+    return container.scrollHeight - container.clientHeight - container.scrollTop <= 8;
+  }
+
+  function editorFinishRender(container, stickToBottom) {
+    container.__hobbitChatRendered = true;
+    if (stickToBottom) container.scrollTop = container.scrollHeight;
+  }
+
+  function startEditorLiveRefresh(root, draw) {
+    let wasConnected = false;
+    let disconnectedTicks = 0;
+    const timer = setInterval(() => {
+      if (root.isConnected) {
+        wasConnected = true;
+        disconnectedTicks = 0;
+        draw();
+      } else if (wasConnected || ++disconnectedTicks >= 10) {
+        clearInterval(timer);
+      }
+    }, 1000);
+    return timer;
+  }
+
   function applySelection(showOverlay) {
     const shared = sharedReader();
     return applyReaderSelection(shared && shared.reader, showOverlay, true);
@@ -249,9 +348,13 @@
   const chatSelectApi = {
     applySelection,
     applyToReader,
+    discoverEditorColors,
+    editorFinishRender,
+    editorShouldStickToBottom,
     refresh,
     settingsDom,
     setSelectedIndex,
+    startEditorLiveRefresh,
   };
   window.AfkWardenHobbitRemixChatSelect = chatSelectApi;
   window.AfkHobbitChatSelect = chatSelectApi;

@@ -44,6 +44,9 @@ AFK Warden Hobbit Remix also loads
 - draws a white Alt1 rectangle around the selected chatbox when Settings opens
   or when the selected chat changes
 - applies the selected chatbox to the Chatbox alert editor preview
+- refreshes the Chatbox editor preview once per second
+- finds player-title and message colours that are not in the old fixed list
+- opens the Chatbox editor preview at the newest lines
 
 AFK Warden Hobbit Remix includes the AFK Warden `style.css` rules locally.
 AFK Warden popup windows request that relative file directly, including the
