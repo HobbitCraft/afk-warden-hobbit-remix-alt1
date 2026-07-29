@@ -15,6 +15,9 @@ The distributed AFK Warden app does not include a general software licence.
 This repository therefore does not apply a new licence to the AFK
 Warden-derived bundle.
 
+`style.css` is based on the AFK Warden stylesheet. Its image references point
+to the corresponding RuneApps-hosted interface assets.
+
 ## SusAlert
 
 The chatbox-loading and selected-chat outline behavior was informed by

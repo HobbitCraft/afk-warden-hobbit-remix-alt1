@@ -25,7 +25,8 @@ Open this appconfig URL in Alt1:
 
 Open Settings and choose the chat index used by chat alerts. AFK Warden Hobbit
 Remix draws a white border around the selected chat window when Settings opens
-or the selection changes.
+or the selection changes. The Chatbox alert editor previews that same selected
+chat so messages and colours can be chosen from the correct window.
 
 ## Mining Stamina
 
@@ -48,6 +49,7 @@ hidden. The feedback button opens this repository's GitHub Issues page.
 
 - `appconfig.json` - Alt1 manifest
 - `index.html` - app page
+- `style.css` - AFK Warden popup and app styling
 - `scripts.bundle.js` - patched AFK Warden bundle
 - `afk-warden-hobbit-remix-chat-select.js` - chat selector patch
 - `assets/icon.svg` - app icon

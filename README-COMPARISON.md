@@ -43,6 +43,12 @@ AFK Warden Hobbit Remix also loads
 - applies the chosen detected chatbox as `reader.pos.mainbox`
 - draws a white Alt1 rectangle around the selected chatbox when Settings opens
   or when the selected chat changes
+- applies the selected chatbox to the Chatbox alert editor preview
+
+AFK Warden Hobbit Remix includes the AFK Warden `style.css` rules locally.
+AFK Warden popup windows request that relative file directly, including the
+add-alert list and Chatbox editor. Interface image URLs in the stylesheet point
+to their RuneApps-hosted copies.
 
 AFK Warden Hobbit Remix adds a `Mining Stamina` alert. It reads the yellow and
 blue overhead mining stamina bar and alerts below the percentage set in the

@@ -94,9 +94,7 @@
     }
   }
 
-  function applySelection(showOverlay) {
-    const shared = sharedReader();
-    const reader = shared && shared.reader;
+  function applyReaderSelection(reader, showOverlay, trackSharedReader) {
     const pos = reader && reader.pos;
     if (!pos || !Array.isArray(pos.boxes) || pos.boxes.length === 0) {
       syncSelectors(pos);
@@ -112,13 +110,22 @@
     const selected = pos.boxes[index];
     if (pos.mainbox !== selected) {
       pos.mainbox = selected;
-      if (appliedIndex !== index) resetReadState(reader);
+      if (!trackSharedReader || appliedIndex !== index) resetReadState(reader);
     }
 
-    appliedIndex = index;
+    if (trackSharedReader) appliedIndex = index;
     syncSelectors(pos);
     if (showOverlay) showSelectedBox(selected);
     return true;
+  }
+
+  function applyToReader(reader, showOverlay) {
+    return applyReaderSelection(reader, showOverlay, false);
+  }
+
+  function applySelection(showOverlay) {
+    const shared = sharedReader();
+    return applyReaderSelection(shared && shared.reader, showOverlay, true);
   }
 
   function refresh(forceRescan, showOverlay) {
@@ -241,6 +248,7 @@
 
   const chatSelectApi = {
     applySelection,
+    applyToReader,
     refresh,
     settingsDom,
     setSelectedIndex,
