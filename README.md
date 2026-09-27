@@ -30,6 +30,11 @@ chat so messages and colours can be chosen from the correct window. The preview
 updates once per second, finds colours missing from AFK Warden's old list, and
 opens at the newest chat lines.
 
+Running alerts and the preview both read standard chat colours, including the
+green and red soul-event messages, plus any colours saved in your alerts. All
+running chat alerts share one read per update. The preview skips OCR when its
+image is unchanged and stops refreshing when its window closes.
+
 ## Mining Stamina
 
 Add `Mining Stamina` from the alert list, or enable it while loading the Mining
@@ -58,6 +63,8 @@ hidden. The feedback button opens this repository's GitHub Issues page.
 - `tests/chat-editor.test.js` - Chatbox editor regression checks
 - `THIRD_PARTY_NOTICES.md` - attribution and dependency notices
 - `scripts.bundle.js.LICENSE.txt` - generated notices referenced by the bundle
+
+Run the chat regression checks with `node tests/chat-editor.test.js`.
 
 ## Credits
 

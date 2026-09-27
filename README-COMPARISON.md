@@ -45,7 +45,11 @@ AFK Warden Hobbit Remix also loads
   or when the selected chat changes
 - applies the selected chatbox to the Chatbox alert editor preview
 - refreshes the Chatbox editor preview once per second
+- uses standard and supplemental message colours in both running alerts and
+  the editor, including green and red soul-event messages
 - finds player-title and message colours that are not in the old fixed list
+- limits each preview refresh to one OCR pass, reuses unchanged images, and
+  stops refreshing closed editor windows
 - opens the Chatbox editor preview at the newest lines
 
 AFK Warden Hobbit Remix includes the AFK Warden `style.css` rules locally.

@@ -4,7 +4,13 @@
   const STORAGE_KEY = "afkWardenHobbitRemix.chatIndex";
   const LEGACY_STORAGE_KEY = "afkHobbit.chatIndex";
   const selectorSet = new Set();
+  const editorReads = new WeakMap();
   let appliedIndex = null;
+
+  const additionalColors = [
+    [130, 70, 184], [0, 174, 0], [45, 184, 20], [67, 188, 188],
+    [102, 152, 255], [235, 47, 47], [30, 255, 0], [255, 112, 0], [163, 53, 238],
+  ];
 
   const typeNames = {
     main: "Main",
@@ -110,6 +116,8 @@
     const selected = pos.boxes[index];
     if (pos.mainbox !== selected) {
       pos.mainbox = selected;
+      reader.font = null;
+      editorReads.delete(reader);
       if (!trackSharedReader || appliedIndex !== index) resetReadState(reader);
     }
 
@@ -123,20 +131,51 @@
     return applyReaderSelection(reader, showOverlay, false);
   }
 
+  function chatReadColors(colors, defaults) {
+    const lib = window.a1lib || window.A1lib;
+    const palette = (window.Chatbox && window.Chatbox.defaultcolors) || defaults || [];
+    return Array.from(new Set(palette.concat(additionalColors, colors).map((c) => lib.mixColor(...c))));
+  }
+
+  function readEditor(reader, image, colors, extraColors, defaults) {
+    const lib = window.a1lib || window.A1lib;
+    const box = reader.pos.mainbox;
+    const margin = box.leftfound ? 0 : 300;
+    const x = box.rect.x - margin;
+    const y = box.rect.y;
+    const width = box.rect.width + margin;
+    const height = box.rect.height;
+    const data = image ? image.toData(x, y, width, height) : lib.capture(x, y, width, height);
+    const palette = chatReadColors(colors.concat(extraColors || []), defaults);
+    const key = [x, y, width, height, box.line0x, box.line0y, !!extraColors, ...palette].join(',');
+    const previous = editorReads.get(reader);
+    // Reuse OCR only when both the captured pixels and reader settings are unchanged.
+    if (previous && previous.key === key && previous.data.length === data.data.length &&
+        previous.data.every((value, index) => value === data.data[index])) return previous.lines;
+
+    reader.readargs = { colors: palette };
+    const lines = reader.read(new lib.ImgRefData(data, x, y)) || [];
+    editorReads.set(reader, { key, data: data.data.slice(), lines });
+    // New colours are used on the next refresh, without another OCR pass in this one.
+    if (extraColors) discoverEditorColors(reader, lines, extraColors);
+    return lines;
+  }
+
   function discoverEditorColors(reader, lines, extraColors) {
     const box = reader && reader.pos && reader.pos.mainbox;
     const buffer = reader && reader.lastReadBuffer;
     const getFontColor = reader && reader.constructor && reader.constructor.getFontColor;
     const lib = window.a1lib || window.A1lib;
-    if (!box || !buffer || !Array.isArray(lines) || !lib || extraColors.length >= 96) return false;
+    if (!box || !buffer || !Array.isArray(lines) || !lib || extraColors.length >= 16) return false;
 
     const existing = new Set(reader.readargs.colors);
     const existingRgb = lib.unmixColor
       ? Array.from(existing, (color) => lib.unmixColor(color))
       : [];
     let added = false;
+    let count = 0;
     for (const line of lines) {
-      if (extraColors.length >= 96) break;
+      if (extraColors.length >= 16 || count >= 4) break;
       const fragments = line.fragments || [];
       const lastFragment = fragments[fragments.length - 1];
       const startX = lastFragment ? lastFragment.xend : box.rect.x + box.line0x;
@@ -146,7 +185,7 @@
       try {
         const sample = buffer.toData(startX, line.basey - 8, Math.min(48, availableWidth), 10);
         let color = null;
-        let bestScore = -Infinity;
+        let bestScore = 32000;
         if (sample.data) {
           for (let x = 0; x < sample.width - 1; x++) {
             for (let y = 0; y < sample.height - 1; y++) {
@@ -162,8 +201,7 @@
               if (
                 existingRgb.some(
                   (known) =>
-                    (x < 4 &&
-                      Math.abs(candidate[0] - known[0]) <= 18 &&
+                    (Math.abs(candidate[0] - known[0]) <= 18 &&
                       Math.abs(candidate[1] - known[1]) <= 18 &&
                       Math.abs(candidate[2] - known[2]) <= 18) ||
                     (Math.max(...candidate) - Math.min(...candidate) <= 6 &&
@@ -192,6 +230,7 @@
         existing.add(mixed);
         existingRgb.push(color);
         added = true;
+        count++;
       } catch (_) {}
     }
     return added;
@@ -211,10 +250,16 @@
     let wasConnected = false;
     let disconnectedTicks = 0;
     const timer = setInterval(() => {
+      const view = root.ownerDocument && root.ownerDocument.defaultView;
+      if (view && view.closed) {
+        clearInterval(timer);
+        return;
+      }
       if (root.isConnected) {
         wasConnected = true;
         disconnectedTicks = 0;
-        draw();
+        const selection = view && view.getSelection();
+        if (!selection || selection.isCollapsed) draw();
       } else if (wasConnected || ++disconnectedTicks >= 10) {
         clearInterval(timer);
       }
@@ -348,10 +393,12 @@
   const chatSelectApi = {
     applySelection,
     applyToReader,
+    chatReadColors,
     discoverEditorColors,
     editorFinishRender,
     editorShouldStickToBottom,
     refresh,
+    readEditor,
     settingsDom,
     setSelectedIndex,
     startEditorLiveRefresh,
