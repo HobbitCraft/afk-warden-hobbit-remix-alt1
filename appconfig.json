@@ -1,7 +1,7 @@
 {
   "appName": "AFK Warden Hobbit Remix",
   "description": "AFK Warden remix with selectable chat alerts and mining stamina detection.",
-  "appUrl": "./index.html",
+  "appUrl": "./index.html?v=20261001",
   "configUrl": "./appconfig.json",
   "iconUrl": "./assets/icon.svg",
   "defaultWidth": 220,

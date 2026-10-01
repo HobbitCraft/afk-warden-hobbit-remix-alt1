@@ -22,15 +22,18 @@ AFK Warden Hobbit Remix:
 
 ## changed
 
-AFK Warden Hobbit Remix loads these external Alt1 scripts before the AFK Warden
+AFK Warden Hobbit Remix loads these Alt1 scripts before the AFK Warden
 bundle:
 
 - `https://www.unpkg.com/alt1@0.1.3/dist/base/index.js`
 - `https://www.unpkg.com/alt1@0.1.3/dist/ocr/index.js`
-- `https://www.unpkg.com/alt1@0.1.3/dist/chatbox/index.js`
+- `vendor/chatbox.js` - Alt1 0.1.3 with local reader fixes
 
 The AFK Warden bundle is patched so its shared chat reader uses
-`Chatbox.default` from that external chatbox script when it is available.
+`Chatbox.default` from that chatbox script when it is available. The local reader
+adds gold game messages and soul-event colours to the default palette. Font
+detection can use a complete timestamp or an older visible line when the newest
+two lines cannot be read. It checks at most eight lines.
 
 AFK Warden Hobbit Remix also loads
 `afk-warden-hobbit-remix-chat-select.js`. That file:
@@ -46,7 +49,7 @@ AFK Warden Hobbit Remix also loads
 - applies the selected chatbox to the Chatbox alert editor preview
 - refreshes the Chatbox editor preview once per second
 - uses standard and supplemental message colours in both running alerts and
-  the editor, including green and red soul-event messages
+  the editor, including green and red soul-event messages and gold game messages
 - finds player-title and message colours that are not in the old fixed list
 - limits each preview refresh to one OCR pass, reuses unchanged images, and
   stops refreshing closed editor windows

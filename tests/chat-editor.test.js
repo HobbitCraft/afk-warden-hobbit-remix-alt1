@@ -6,6 +6,17 @@ const vm = require("node:vm");
 const sourcePath = path.join(__dirname, "..", "afk-warden-hobbit-remix-chat-select.js");
 const source = fs.readFileSync(sourcePath, "utf8");
 const bundle = fs.readFileSync(path.join(__dirname, "..", "scripts.bundle.js"), "utf8");
+const index = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "appconfig.json"), "utf8"));
+const appUrl = new URL(manifest.appUrl, 'https://example.test/');
+const release = appUrl.searchParams.get('v');
+assert.ok(release, 'the app page must use a versioned URL');
+for (const file of ['scripts.bundle.js', 'afk-warden-hobbit-remix-chat-select.js', 'vendor/chatbox.js']) {
+  const src = [...index.matchAll(/<script\s+src="([^"]+)"/g)].map(match => match[1])
+    .find(src => new URL(src, appUrl).pathname === '/' + file);
+  assert.ok(src, 'missing local script: ' + file);
+  assert.equal(new URL(src, appUrl).searchParams.get('v'), release, 'script release must match appUrl');
+}
 const installMarker = source.indexOf("  if (!install())");
 assert.notEqual(installMarker, -1, "chat selector install marker is missing");
 assert.match(bundle, /\.readEditor\(s,e,t.getValue\(\),A\?a:null,Y.defaultcolors\)/);
@@ -46,7 +57,7 @@ const defaults = [[255, 255, 255], [127, 169, 255], [255, 0, 0]];
 windowMock.Chatbox = { defaultcolors: defaults };
 const custom = [[74, 163, 200], [255, 255, 255]];
 const palette = api.chatReadColors(custom);
-for (const color of defaults.concat(custom, [[30, 255, 0], [235, 47, 47]])) {
+for (const color of defaults.concat(custom, [[30, 255, 0], [235, 47, 47], [255, 204, 0]])) {
   assert.ok(palette.includes(mixColor(...color)));
 }
 assert.equal(new Set(palette).size, palette.length);

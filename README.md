@@ -3,7 +3,7 @@
 An Alt1 app based on RuneApps AFK Warden.
 
 AFK Warden Hobbit Remix keeps the AFK Warden alerts and presets, uses the
-current external Alt1 chatbox reader, lets you select which detected chat
+Alt1 chatbox reader with local fixes, lets you select which detected chat
 window supplies chat alerts, and adds a Mining Stamina alert.
 
 See [README-COMPARISON.md](README-COMPARISON.md) for the differences from
@@ -31,9 +31,14 @@ updates once per second, finds colours missing from AFK Warden's old list, and
 opens at the newest chat lines.
 
 Running alerts and the preview both read standard chat colours, including the
-green and red soul-event messages, plus any colours saved in your alerts. All
+green and red soul-event messages and gold (`#FFCC00`) game messages, plus any colours saved in your alerts. All
 running chat alerts share one read per update. The preview skips OCR when its
 image is unchanged and stops refreshing when its window closes.
+
+Font detection checks up to eight visible lines when the last two are not
+readable. A complete timestamp can identify the font even when the message
+colour is unknown. This avoids a blank preview caused by an unrecognised colour
+on the newest lines; it does not guarantee recognition of every custom colour.
 
 ## Mining Stamina
 
@@ -61,10 +66,25 @@ hidden. The feedback button opens this repository's GitHub Issues page.
 - `afk-warden-hobbit-remix-chat-select.js` - chat selector patch
 - `assets/icon.svg` - app icon
 - `tests/chat-editor.test.js` - Chatbox editor regression checks
+- `vendor/chatbox.js` - pinned Alt1 0.1.3 reader with palette and font-detection fixes
+- `tools/vendor-chatbox.cjs` - hash-checked reader rebuild script
+- `tests/chat-font.test.js` - font-detection regression checks
 - `THIRD_PARTY_NOTICES.md` - attribution and dependency notices
 - `scripts.bundle.js.LICENSE.txt` - generated notices referenced by the bundle
 
 Run the chat regression checks with `node tests/chat-editor.test.js`.
+Run the font checks with `node tests/chat-font.test.js`.
+Rebuild the reader with `node tools/vendor-chatbox.cjs`.
+
+## Publishing Updates
+
+When changing a local JavaScript file, update the `v` query value on all three
+local script URLs in `index.html` and on `appUrl` in `appconfig.json`. Use the
+same new value for all four. This keeps Alt1 from reusing older cached scripts.
+
+After publishing, wait for GitHub Pages to finish deploying, then close and
+reopen the whole app in Alt1. Closing only an alert's settings window does not
+reload the app code.
 
 ## Credits
 

@@ -57,6 +57,11 @@ https://github.com/skillbert/alt1
 The published npm package does not declare a licence in its package metadata.
 It is used here for interoperability with Alt1 Toolkit.
 
+`vendor/chatbox.js` is a modified copy of the pinned `alt1@0.1.3` chatbox
+browser build. It adds game-message colours and a bounded font-detection
+fallback. `tools/vendor-chatbox.cjs` records the source URL and SHA-256 and
+reproduces those changes. Base and OCR still load from the pinned CDN URLs.
+
 ## RuneApps hosted resources
 
 AFK Warden Hobbit Remix loads AFK Warden stylesheets, alarm sounds, popup
