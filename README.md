@@ -86,6 +86,12 @@ Run the font checks with `node tests/chat-font.test.js`.
 Run the window checks with `node tests/chat-detection.test.js`.
 Rebuild the reader with `node tools/vendor-chatbox.cjs`.
 
+The real-pixel test uses a redacted chat fixture containing only game-interface
+elements and system-message text. It checks Main and Group Ironman detection,
+actual OCR, and the alert preview. To run all checks, use `npm install`,
+`npx playwright install chromium`, then `npm test`. These dependencies are only
+needed for development; the Alt1 app needs no installation or build step.
+
 ## Publishing Updates
 
 When changing a local JavaScript file, update the `v` query value on all three

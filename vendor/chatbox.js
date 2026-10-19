@@ -782,7 +782,7 @@ class ChatBoxReader {
                 const label = chatimgs.raw[chat];
                 for (const offsetY of [1, 0]) {
                     if (data.pixelCompare(label, 0, offsetY) < Infinity || data.pixelCompare(label, 5, offsetY) < Infinity) {
-                        botlefts.push({ x: loc.x, y: loc.y - (offsetY === 1 ? 1 : 2), type: chatmap[chat] });
+                        botlefts.push({ x: loc.x, y: loc.y - 1, type: chatmap[chat] });
                         matched = true;
                         break;
                     }
@@ -818,6 +818,33 @@ class ChatBoxReader {
                 loc.x < Math.min(...toprights.filter(right => right.x > left.x && right.y < inputY).map(right => right.x)));
             if (!existing) botlefts.push({ x: loc.x, y: inputY, type: "private" });
         });
+        // A changed collapse icon can fail the native per-pixel threshold. Only search
+        // the header row of a verified game-filter label and require a unique match.
+        for (const marker of [imgs.gameall, imgs.gamefilter, imgs.gameoff].flatMap(label => img.findSubimage(label))) {
+            const top = marker.y + 22;
+            const input = botlefts.find(left => left.type === "main" && left.x >= marker.x - 10 && left.x < marker.x + 300 && left.y > top);
+            if (!input) continue;
+            const rightLimit = Math.min(img.width, ...botlefts.filter(left => left !== input &&
+                left.x > input.x && Math.abs(left.y - input.y) <= 3).map(left => left.x));
+            if (toprights.some(right => Math.abs(right.y - top) <= 3 && right.x > input.x && right.x <= rightLimit)) continue;
+            const rowY = Math.max(0, marker.y - 1);
+            const rowHeight = Math.min(18, img.height - rowY);
+            if (rowHeight < imgs.minusbutton.height) continue;
+            const row = img.toData(0, rowY, img.width, rowHeight);
+            const matches = [];
+            for (let x = marker.x + 60; x <= rightLimit - imgs.minusbutton.width; x++) {
+                for (let y = 0; y <= row.height - imgs.minusbutton.height; y++) {
+                    const score = row.pixelCompare(imgs.minusbutton, x, y, 150);
+                    if (score < 50) matches.push({ x, y: y + rowY, score });
+                }
+            }
+            matches.sort((a, b) => a.score - b.score);
+            const best = matches[0];
+            const competitor = best && matches.find(match => Math.abs(match.x - best.x) >= imgs.minusbutton.width);
+            if (best && (!competitor || competitor.score >= best.score + 8)) {
+                toprights.push({ x: best.x + 5, y: best.y + 21, type: "full" });
+            }
+        }
         //check if we're in full-on legacy
         if (botlefts.length == 1 && toprights.length == 0) {
             //cheat in a topright without knowing it's actual height
@@ -886,6 +913,21 @@ class ChatBoxReader {
                 mainbox = group;
             }
         });
+        // All standard input bars start with the same player's name. A verified Main
+        // left edge supplies that shared prefix width for adjacent collapsed chats.
+        const reference = groups.find(group => group.type === "main" && group.leftfound);
+        if (reference) {
+            const prefixWidth = reference.botleft.x - reference.rect.x;
+            for (const group of groups) {
+                if (group.leftfound || group.type === "private" || group.type === "unknown") continue;
+                const left = group.botleft.x - prefixWidth;
+                if (prefixWidth > 0 && left >= group.captureLeft && left < group.rect.x) {
+                    group.rect.width += group.rect.x - left;
+                    group.rect.x = left;
+                    group.leftfound = true;
+                }
+            }
+        }
         if (groups.length == 0 || !mainbox) {
             return null;
         }

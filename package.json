@@ -1,0 +1,10 @@
+{
+  "name": "afk-warden-hobbit-remix-checks",
+  "private": true,
+  "scripts": {
+    "test": "node tests/chat-editor.test.js && node tests/chat-font.test.js && node tests/chat-detection.test.js && node tests/chat-screenshot.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
