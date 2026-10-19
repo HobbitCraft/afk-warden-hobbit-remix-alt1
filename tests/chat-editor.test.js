@@ -230,5 +230,7 @@ alertContext.Ut++;
 for (const alert of alerts) alert.check();
 assert.equal(liveReads, 2);
 assert.ok(alerts.every(alert => !alert.triggered), 'an empty read must not replay old alerts');
+vm.runInContext('qt.invalidate(); qt.read();', alertContext);
+assert.equal(liveReads, 3, 'changing chat must allow a fresh read within the same update tick');
 
 console.log('Chat editor and four-alert regression checks passed.');

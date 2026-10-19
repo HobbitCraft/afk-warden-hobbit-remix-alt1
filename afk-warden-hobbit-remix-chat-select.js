@@ -3,9 +3,11 @@
 
   const STORAGE_KEY = "afkWardenHobbitRemix.chatIndex";
   const LEGACY_STORAGE_KEY = "afkHobbit.chatIndex";
+  const WINDOW_KEY = "afkWardenHobbitRemix.chatWindow";
   const selectorSet = new Set();
   const editorReads = new WeakMap();
-  let appliedIndex = null;
+  const knownWindowTypes = new Map();
+  let appliedWindow = null;
 
   const additionalColors = [
     [130, 70, 184], [0, 174, 0], [45, 184, 20], [67, 188, 188],
@@ -37,6 +39,56 @@
 
   function sharedReader() {
     return window.AfkScripts && window.AfkScripts.sharedChatboxReader;
+  }
+
+  function windowIdentity(box) {
+    return { type: box.type, right: box.rect.x + box.rect.width, top: box.rect.y,
+      bottom: box.rect.y + box.rect.height };
+  }
+
+  function identityKey(box) {
+    const id = windowIdentity(box);
+    return [id.right, id.top, id.bottom].join(':');
+  }
+
+  function normalizeBoxes(pos) {
+    const saved = selectedWindow();
+    for (const box of pos.boxes) {
+      const key = identityKey(box);
+      if (box.type === 'unknown' && knownWindowTypes.has(key)) box.type = knownWindowTypes.get(key);
+      else if (box.type === 'unknown' && saved && Math.abs(saved.right - windowIdentity(box).right) <= 3 &&
+          Math.abs(saved.top - box.rect.y) <= 3 && Math.abs(saved.bottom - windowIdentity(box).bottom) <= 3) box.type = saved.type;
+      else if (box.type && box.type !== 'unknown') knownWindowTypes.set(key, box.type);
+    }
+    pos.boxes.sort((a, b) => Math.abs(a.rect.y - b.rect.y) <= 3 ? a.rect.x - b.rect.x : a.rect.y - b.rect.y);
+  }
+
+  function selectedWindow() {
+    try {
+      const id = JSON.parse(localStorage.getItem(WINDOW_KEY) || 'null');
+      return id && typeof id.type === 'string' && [id.right, id.top, id.bottom].every(Number.isFinite) ? id : null;
+    } catch (_) { return null; }
+  }
+
+  function selectionIndex(pos) {
+    const saved = selectedWindow();
+    if (!saved) return Math.min(selectedIndex(), pos.boxes.length - 1);
+    const exact = pos.boxes.findIndex(box => {
+      const id = windowIdentity(box);
+      return (box.type === saved.type || box.type === 'unknown' || saved.type === 'unknown') &&
+        Math.abs(id.right - saved.right) <= 3 && Math.abs(id.top - saved.top) <= 3 &&
+        Math.abs(id.bottom - saved.bottom) <= 3;
+    });
+    if (exact >= 0) return exact;
+    const matching = pos.boxes.filter(box => box.type === saved.type);
+    // A moved window can be recovered by type only when the match is unambiguous.
+    return matching.length === 1 ? pos.boxes.indexOf(matching[0]) : -1;
+  }
+
+  function saveWindow(box, index) {
+    const identity = JSON.stringify(windowIdentity(box));
+    if (localStorage.getItem(WINDOW_KEY) !== identity) localStorage.setItem(WINDOW_KEY, identity);
+    if (localStorage.getItem(STORAGE_KEY) !== String(index)) localStorage.setItem(STORAGE_KEY, String(index));
   }
 
   function resetReadState(reader) {
@@ -77,7 +129,10 @@
   }
 
   function syncSelector(selector, pos) {
+    if (pos && Array.isArray(pos.boxes)) normalizeBoxes(pos);
     const options = optionsFor(pos);
+    const index = pos && pos.boxes && pos.boxes.length ? selectionIndex(pos) : 0;
+    if (index < 0) options.unshift({ value: '-1', text: `${typeNames[selectedWindow().type] || 'Chat'} (not found)` });
     const key = options.map((option) => `${option.value}:${option.text}`).join("|");
     if (selector.dataset.optionsKey !== key) {
       selector.replaceChildren();
@@ -90,7 +145,6 @@
       selector.dataset.optionsKey = key;
     }
 
-    const index = selectedIndex();
     selector.value = options.some((option) => option.value === String(index)) ? String(index) : "0";
   }
 
@@ -108,21 +162,21 @@
       return false;
     }
 
-    let index = selectedIndex();
-    if (index >= pos.boxes.length) {
-      index = 0;
-      localStorage.setItem(STORAGE_KEY, "0");
-    }
+    normalizeBoxes(pos);
+    const index = selectionIndex(pos);
+    if (index < 0) { syncSelectors(pos); return false; }
 
     const selected = pos.boxes[index];
-    if (pos.mainbox !== selected) {
+    const key = identityKey(selected);
+    if (pos.mainbox !== selected || (trackSharedReader && appliedWindow !== key)) {
       pos.mainbox = selected;
       reader.font = null;
       editorReads.delete(reader);
-      if (!trackSharedReader || appliedIndex !== index) resetReadState(reader);
+      resetReadState(reader);
+      if (trackSharedReader && sharedReader().invalidate) sharedReader().invalidate();
     }
 
-    if (trackSharedReader) appliedIndex = index;
+    if (trackSharedReader) { appliedWindow = key; saveWindow(selected, index); }
     syncSelectors(pos);
     if (showOverlay) showSelectedBox(selected);
     return true;
@@ -139,9 +193,10 @@
   }
 
   function readEditor(reader, image, colors, extraColors, defaults) {
+    if (reader.pos && Array.isArray(reader.pos.boxes) && !applyToReader(reader, false)) return [];
     const lib = window.a1lib || window.A1lib;
     const box = reader.pos.mainbox;
-    const margin = box.leftfound ? 0 : 300;
+    const margin = box.leftfound ? 0 : Math.min(300, Math.max(0, box.rect.x - (box.captureLeft || 0)));
     const x = box.rect.x - margin;
     const y = box.rect.y;
     const width = box.rect.width + margin;
@@ -280,7 +335,7 @@
 
     if (forceRescan) {
       reader.pos = null;
-      appliedIndex = null;
+      appliedWindow = null;
       resetReadState(reader);
     }
 
@@ -293,12 +348,18 @@
   }
 
   function setSelectedIndex(index) {
+    if (index < 0) return;
     const current = selectedIndex();
+    const currentReader = sharedReader();
+    const pos = currentReader && currentReader.reader && currentReader.reader.pos;
+    if (pos && pos.boxes) normalizeBoxes(pos);
+    if (pos && pos.boxes[index]) saveWindow(pos.boxes[index], index);
+    else localStorage.setItem(WINDOW_KEY, '');
     localStorage.setItem(STORAGE_KEY, String(index));
     if (index !== current) {
       const shared = sharedReader();
       resetReadState(shared && shared.reader);
-      appliedIndex = null;
+      appliedWindow = null;
     }
     if (!applySelection(true)) refresh(true, true);
   }
@@ -373,7 +434,7 @@
     };
 
     shared.read = function () {
-      applySelection(false);
+      if (!applySelection(false)) return [];
       const result = originalRead.apply(this, arguments);
       applySelection(false);
       return result;
@@ -402,6 +463,8 @@
     readEditor,
     settingsDom,
     setSelectedIndex,
+    normalizeBoxes,
+    selectionIndex,
     startEditorLiveRefresh,
   };
   window.AfkWardenHobbitRemixChatSelect = chatSelectApi;

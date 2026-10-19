@@ -61,6 +61,8 @@ It is used here for interoperability with Alt1 Toolkit.
 browser build. It adds game-message colours and a bounded font-detection
 fallback. `tools/vendor-chatbox.cjs` records the source URL and SHA-256 and
 reproduces those changes. Base and OCR still load from the pinned CDN URLs.
+The local reader also fixes chat-label precedence, corner pairing, and capture
+boundaries between adjacent windows.
 
 ## RuneApps hosted resources
 

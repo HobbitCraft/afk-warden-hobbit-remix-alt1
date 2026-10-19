@@ -631,7 +631,7 @@ class ChatBoxReader {
             return null;
         }
         var box = this.pos.mainbox;
-        var leftmargin = (box.leftfound ? 0 : 300);
+        var leftmargin = box.leftfound ? 0 : Math.min(300, Math.max(0, box.rect.x - (box.captureLeft || 0)));
         let imgx = box.rect.x - leftmargin;
         let imgy = box.rect.y;
         let imgdata;
@@ -775,18 +775,19 @@ class ChatBoxReader {
             // biggest chat size is 83 + 4 pixels
             var data = img.toData(loc.x + 19, loc.y, 87 + (107 - 102), 12);
             var matched = false;
-            for (let chat in chatimgs.raw) {
-                let cimg = chatimgs.raw[chat];
-                if (data.pixelCompare(cimg, 0, 1) != Infinity || data.pixelCompare(cimg, (107 - 102), 1) != Infinity) {
-                    botlefts.push({ x: loc.x, y: loc.y - 1, type: chatmap[chat] });
-                    matched = true;
+            // Prefer full labels; the short private-message prefix is handled separately.
+            const labels = Object.keys(chatimgs.raw).filter(chat => chat !== "privateRecent")
+                .sort((a, b) => chatimgs.raw[b].width - chatimgs.raw[a].width);
+            for (const chat of labels) {
+                const label = chatimgs.raw[chat];
+                for (const offsetY of [1, 0]) {
+                    if (data.pixelCompare(label, 0, offsetY) < Infinity || data.pixelCompare(label, 5, offsetY) < Infinity) {
+                        botlefts.push({ x: loc.x, y: loc.y - (offsetY === 1 ? 1 : 2), type: chatmap[chat] });
+                        matched = true;
+                        break;
+                    }
                 }
-                //i don't even know anymore some times the bubble is 1px higher (i think it might be java related)
-                else if (data.pixelCompare(cimg, 0, 0) != Infinity || data.pixelCompare(cimg, (107 - 102), 0) != Infinity) {
-                    loc.y -= 1;
-                    botlefts.push({ x: loc.x, y: loc.y, type: chatmap[chat] });
-                    matched = true;
-                }
+                if (matched) break;
             }
             //active chat
             if (!matched) {
@@ -811,7 +812,11 @@ class ChatBoxReader {
         });
         // previously activated private chat showing "To"
         img.findSubimage(chatimgs.privateRecent).forEach(loc => {
-            botlefts.push({ x: loc.x, y: loc.y - 1, type: "private" });
+            const inputY = loc.y - 1;
+            // A "To" match on an identified input row is not another window.
+            const existing = botlefts.some(left => Math.abs(left.y - inputY) <= 2 && loc.x >= left.x &&
+                loc.x < Math.min(...toprights.filter(right => right.x > left.x && right.y < inputY).map(right => right.x)));
+            if (!existing) botlefts.push({ x: loc.x, y: inputY, type: "private" });
         });
         //check if we're in full-on legacy
         if (botlefts.length == 1 && toprights.length == 0) {
@@ -821,42 +826,33 @@ class ChatBoxReader {
                 toprights.push({ x: pos[0].x + 32, y: pos[0].y - 170, type: "legacy" });
             }
         }
-        var groups = [];
-        var groupcorners = function () {
-            var done = true;
-            for (var a in toprights) {
-                if (groups.find(q => q.topright == toprights[a])) {
-                    continue;
-                }
-                done = false;
-                for (var b in botlefts) {
-                    if (groups.find(q => q.botleft == botlefts[b])) {
-                        continue;
-                    }
-                    var group = {
-                        timestamp: false,
-                        type: "main",
-                        leftfound: false,
-                        topright: toprights[a],
-                        botleft: botlefts[b],
-                        rect: new a1lib.Rect(botlefts[b].x, toprights[a].y, toprights[a].x - botlefts[b].x, botlefts[b].y - toprights[a].y),
-                        line0x: 0,
-                        line0y: 0
-                    };
-                    if (groups.find(q => q.rect.overlaps(group.rect))) {
-                        continue;
-                    }
-                    groups[groups.length] = group;
-                    if (groupcorners()) {
-                        return true;
-                    }
-                    groups.splice(groups.length - 1, 1);
-                }
+        const candidates = [];
+        for (const right of toprights) {
+            for (const left of botlefts) {
+                const width = right.x - left.x;
+                const height = left.y - right.y;
+                if (width < 60 || height < 14) continue;
+                candidates.push({ timestamp: false, type: left.type, leftfound: false,
+                    topright: right, botleft: left,
+                    rect: new a1lib.Rect(left.x, right.y, width, height), line0x: 0, line0y: 0 });
             }
-            return done;
-        };
-        if (!groupcorners()) {
-            return null;
+        }
+        // Nearby corners belong together; reject reversed and overlapping rectangles.
+        candidates.sort((a, b) => a.rect.width * a.rect.height - b.rect.width * b.rect.height);
+        const groups = [];
+        for (const candidate of candidates) {
+            if (groups.some(group => group.topright === candidate.topright || group.botleft === candidate.botleft ||
+                group.rect.overlaps(candidate.rect))) continue;
+            groups.push(candidate);
+        }
+        groups.sort((a, b) => Math.abs(a.rect.y - b.rect.y) <= 3 ? a.rect.x - b.rect.x : a.rect.y - b.rect.y);
+        for (const group of groups) {
+            // Backward OCR must stay on this side of the neighbouring panel's right edge.
+            group.captureLeft = Math.max(0, ...groups.filter(other => other !== group &&
+                other.rect.x + other.rect.width <= group.rect.x &&
+                other.rect.y < group.rect.y + group.rect.height &&
+                other.rect.y + other.rect.height > group.rect.y)
+                .map(other => other.rect.x + other.rect.width));
         }
         var mainbox = null;
         groups.forEach(group => {
@@ -864,17 +860,17 @@ class ChatBoxReader {
             if (!group.leftfound && group.topright.type == "full") {
                 var pos = [];
                 if (pos.length == 0) {
-                    pos = img.findSubimage(imgs.gameall, Math.max(0, group.rect.x - 300), group.rect.y - 22, 310, 16);
+                    pos = img.findSubimage(imgs.gameall, Math.max(group.captureLeft, group.rect.x - 300), group.rect.y - 22, Math.min(group.rect.x + 100, group.rect.x + group.rect.width) - Math.max(group.captureLeft, group.rect.x - 300), 16);
                 }
                 if (pos.length == 0) {
-                    pos = img.findSubimage(imgs.gamefilter, Math.max(0, group.rect.x - 300), group.rect.y - 22, 310, 16);
+                    pos = img.findSubimage(imgs.gamefilter, Math.max(group.captureLeft, group.rect.x - 300), group.rect.y - 22, Math.min(group.rect.x + 100, group.rect.x + group.rect.width) - Math.max(group.captureLeft, group.rect.x - 300), 16);
                 }
                 if (pos.length == 0) {
-                    pos = img.findSubimage(imgs.gameoff, Math.max(0, group.rect.x - 300), group.rect.y - 22, 310, 16);
+                    pos = img.findSubimage(imgs.gameoff, Math.max(group.captureLeft, group.rect.x - 300), group.rect.y - 22, Math.min(group.rect.x + 100, group.rect.x + group.rect.width) - Math.max(group.captureLeft, group.rect.x - 300), 16);
                 }
                 if (pos.length != 0) {
                     group.leftfound = true;
-                    var d = group.rect.x - pos[0].x + 2;
+                    var d = group.rect.x - Math.max(group.captureLeft, pos[0].x - 2);
                     group.rect.x -= d;
                     group.rect.width += d;
                 }

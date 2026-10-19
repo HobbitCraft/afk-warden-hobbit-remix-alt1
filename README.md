@@ -30,6 +30,11 @@ chat so messages and colours can be chosen from the correct window. The preview
 updates once per second, finds colours missing from AFK Warden's old list, and
 opens at the newest chat lines.
 
+Chat windows have a stable order, and the saved selection follows the chosen
+window across rescans. Main and Group Ironman use separate capture areas,
+including the margin used to find the start of a chat line. If the selected
+window disappears, alerts wait for it instead of reading another window.
+
 Running alerts and the preview both read standard chat colours, including the
 green and red soul-event messages and gold (`#FFCC00`) game messages, plus any colours saved in your alerts. All
 running chat alerts share one read per update. The preview skips OCR when its
@@ -69,11 +74,13 @@ hidden. The feedback button opens this repository's GitHub Issues page.
 - `vendor/chatbox.js` - pinned Alt1 0.1.3 reader with palette and font-detection fixes
 - `tools/vendor-chatbox.cjs` - hash-checked reader rebuild script
 - `tests/chat-font.test.js` - font-detection regression checks
+- `tests/chat-detection.test.js` - window detection, capture boundaries, and stable selection checks
 - `THIRD_PARTY_NOTICES.md` - attribution and dependency notices
 - `scripts.bundle.js.LICENSE.txt` - generated notices referenced by the bundle
 
 Run the chat regression checks with `node tests/chat-editor.test.js`.
 Run the font checks with `node tests/chat-font.test.js`.
+Run the window checks with `node tests/chat-detection.test.js`.
 Rebuild the reader with `node tools/vendor-chatbox.cjs`.
 
 ## Publishing Updates

@@ -35,6 +35,10 @@ adds gold game messages and soul-event colours to the default palette. Font
 detection can use a complete timestamp or an older visible line when the newest
 two lines cannot be read. It checks at most eight lines.
 
+Window detection prefers complete chat labels over the short private-message
+prefix and pairs nearby corners. Each window's OCR area stops at the adjacent
+window's edge.
+
 AFK Warden Hobbit Remix also loads
 `afk-warden-hobbit-remix-chat-select.js`. That file:
 
@@ -42,6 +46,8 @@ AFK Warden Hobbit Remix also loads
 - adds a `Chat alerts` selector in Settings
 - stores the chosen chat index in `localStorage` as
   `afkWardenHobbitRemix.chatIndex`
+- saves the chosen window's type and position so rescans do not switch chats
+- keeps the list ordered by window position and retains known labels during typing
 - migrates the previous `afkHobbit.chatIndex` setting when present
 - applies the chosen detected chatbox as `reader.pos.mainbox`
 - draws a white Alt1 rectangle around the selected chatbox when Settings opens
