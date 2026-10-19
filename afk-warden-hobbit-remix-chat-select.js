@@ -6,6 +6,7 @@
   const WINDOW_KEY = "afkWardenHobbitRemix.chatWindow";
   const selectorSet = new Set();
   const editorReads = new WeakMap();
+  const editorSources = new WeakMap();
   const knownWindowTypes = new Map();
   let appliedWindow = null;
 
@@ -192,8 +193,36 @@
     return Array.from(new Set(palette.concat(additionalColors, colors).map((c) => lib.mixColor(...c))));
   }
 
+  function prepareEditorReader(reader, image) {
+    const shared = sharedReader();
+    if (shared && shared.reader !== reader) {
+      if (!shared.reader.pos) {
+        if (image && shared.reader.find) shared.reader.find(image);
+        else shared.tryFind();
+      }
+      if (!applySelection(false)) return false;
+      const source = shared.reader.pos;
+      const box = source.mainbox;
+      const key = JSON.stringify([box.type, box.rect, box.leftfound, box.captureLeft, box.line0x, box.line0y]);
+      if (editorSources.get(reader) !== key) {
+        // Share window detection, but never share mutable OCR or overlap state.
+        const boxes = source.boxes.map(item => ({ ...item, rect: { ...item.rect } }));
+        reader.pos = { boxes, mainbox: boxes[source.boxes.indexOf(box)] };
+        reader.font = null;
+        resetReadState(reader);
+        editorReads.delete(reader);
+        editorSources.set(reader, key);
+      }
+    } else {
+      if (!reader.pos && reader.find) reader.find(image);
+      if (!reader.pos || (Array.isArray(reader.pos.boxes) && !applyToReader(reader, false))) return false;
+    }
+    reader.diffRead = false;
+    return true;
+  }
+
   function readEditor(reader, image, colors, extraColors, defaults) {
-    if (reader.pos && Array.isArray(reader.pos.boxes) && !applyToReader(reader, false)) return [];
+    if (!prepareEditorReader(reader, image)) return [];
     const lib = window.a1lib || window.A1lib;
     const box = reader.pos.mainbox;
     const margin = box.leftfound ? 0 : Math.min(300, Math.max(0, box.rect.x - (box.captureLeft || 0)));
@@ -461,6 +490,7 @@
     editorShouldStickToBottom,
     refresh,
     readEditor,
+    prepareEditorReader,
     settingsDom,
     setSelectedIndex,
     normalizeBoxes,

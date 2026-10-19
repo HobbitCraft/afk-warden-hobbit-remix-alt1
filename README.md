@@ -34,6 +34,9 @@ Chat windows have a stable order, and the saved selection follows the chosen
 window across rescans. Main and Group Ironman use separate capture areas,
 including the margin used to find the start of a chat line. If the selected
 window disappears, alerts wait for it instead of reading another window.
+New-alert and settings previews use a private copy of that same detected
+window. Their text reader shows existing messages without consuming the
+messages used by running alerts.
 
 Running alerts and the preview both read standard chat colours, including the
 green and red soul-event messages and gold (`#FFCC00`) game messages, plus any colours saved in your alerts. All

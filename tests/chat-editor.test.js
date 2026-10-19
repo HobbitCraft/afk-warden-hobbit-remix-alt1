@@ -20,6 +20,7 @@ for (const file of ['scripts.bundle.js', 'afk-warden-hobbit-remix-chat-select.js
 const installMarker = source.indexOf("  if (!install())");
 assert.notEqual(installMarker, -1, "chat selector install marker is missing");
 assert.match(bundle, /\.readEditor\(s,e,t.getValue\(\),A\?a:null,Y.defaultcolors\)/);
+assert.match(bundle, /\.prepareEditorReader\(s,e\)/);
 assert.match(bundle, /\.startEditorLiveRefresh\(n,r\)/);
 assert.match(bundle, /\.editorShouldStickToBottom\(o\.chatbox\)/);
 

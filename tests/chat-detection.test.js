@@ -111,4 +111,33 @@ assert.equal(shared.read().length, 0, 'a missing selected chat must not read ano
 assert.equal(reads, before);
 reader.pos = detect([main, { ...gim, left: 600, right: 900 }]);
 assert.deepEqual(shared.read(), ['gimc'], 'a uniquely identified moved chat must remain selected');
+
+// The new-alert editor must use the selected runtime window even if its own scan differs.
+reader.pos = detect([main, gim]);
+api.setSelectedIndex(0);
+const editor = { pos: detect([gim]), font: null, diffRead: true, overlaplines: [],
+  read(image) {
+    assert.equal(this.pos.mainbox.type, 'main');
+    assert.equal(this.diffRead, false, 'the preview must show existing messages, not only new ones');
+    assert.ok(image);
+    return [{ text: 'Visible Main chat', fragments: [] }];
+  } };
+const buffer = { data: new Uint8ClampedArray(16), width: 2, height: 2 };
+windowMock.A1lib = { mixColor, capture: () => buffer, ImgRefData: class {} };
+const preview = api.readEditor(editor, null, [], null, [[255, 255, 255]]);
+assert.equal(preview[0]?.text, 'Visible Main chat', 'new-alert preview must not silently discard the selected window');
+assert.notEqual(editor.pos.mainbox, reader.pos.mainbox, 'preview OCR must not mutate runtime coordinates');
+editor.pos.mainbox.rect.x += 2;
+assert.notEqual(editor.pos.mainbox.rect.x, reader.pos.mainbox.rect.x);
+editor.read = () => [{ text: 'Visible ' + editor.pos.mainbox.type + ' chat', fragments: [] }];
+api.setSelectedIndex(1);
+assert.equal(api.readEditor(editor, null, [], null, [[255, 255, 255]])[0].text, 'Visible gimc chat');
+assert.equal(reader.diffRead, undefined, 'preview setup must not change the runtime read mode');
+reader.pos = detect([main]);
+assert.equal(api.readEditor(editor, null, [], null).length, 0, 'missing selected windows must stay isolated');
+let finds = 0;
+reader.pos = null;
+reader.find = image => { assert.ok(image); finds++; return reader.pos = detect([main, gim]); };
+assert.equal(api.readEditor(editor, { toData: () => buffer }, [], null, [[255, 255, 255]])[0].text, 'Visible gimc chat');
+assert.equal(finds, 1, 'a new alert must find chat even when no chat alert is running');
 console.log('Chat window detection, isolation, and stable selection checks passed');
